@@ -1,0 +1,1 @@
+34ecaffaf022890b850729c606bca1d909cc09d70d51a7dead92bfe8fb741217  champsim_config.json
