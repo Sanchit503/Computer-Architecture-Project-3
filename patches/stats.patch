@@ -1,0 +1,40 @@
+From 122c656ee6fb3808540caff95cdf09ea1cb804ae Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Thu, 1 Oct 2026 15:27:00 +0700
+Subject: [PATCH] Expose prefetch fill count in simulation statistics
+
+---
+ src/json_printer.cc  | 1 +
+ src/plain_printer.cc | 4 ++--
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/json_printer.cc b/src/json_printer.cc
+index 389df34..d15b30d 100644
+--- a/src/json_printer.cc
++++ b/src/json_printer.cc
+@@ -51,6 +51,7 @@ void to_json(nlohmann::json& j, const CACHE::stats_type& stats)
+   statsmap.emplace("prefetch issued", stats.pf_issued);
+   statsmap.emplace("useful prefetch", stats.pf_useful);
+   statsmap.emplace("useless prefetch", stats.pf_useless);
++  statsmap.emplace("prefetch filled", stats.pf_fill);
+ 
+   uint64_t total_downstream_demands = stats.mshr_return.total();
+   for (std::size_t cpu = 0; cpu < NUM_CPUS; ++cpu)
+diff --git a/src/plain_printer.cc b/src/plain_printer.cc
+index 972644b..bc31de7 100644
+--- a/src/plain_printer.cc
++++ b/src/plain_printer.cc
+@@ -116,8 +116,8 @@ std::vector<std::string> champsim::plain_printer::format(CACHE::stats_type stats
+                       stats.mshr_merge.value_or(std::pair{type, cpu}, mshr_merge_value_type{})));
+     }
+ 
+-    lines.push_back(fmt::format("cpu{}->{} PREFETCH REQUESTED: {:10} ISSUED: {:10} USEFUL: {:10} USELESS: {:10}", cpu, stats.name, stats.pf_requested,
+-                                stats.pf_issued, stats.pf_useful, stats.pf_useless));
++    lines.push_back(fmt::format("cpu{}->{} PREFETCH REQUESTED: {:10} ISSUED: {:10} USEFUL: {:10} USELESS: {:10} FILLED: {:10}", cpu, stats.name,
++                                stats.pf_requested, stats.pf_issued, stats.pf_useful, stats.pf_useless, stats.pf_fill));
+ 
+     uint64_t total_downstream_demands = total_mshr_return - stats.mshr_return.value_or(std::pair{access_type::PREFETCH, cpu}, mshr_return_value_type{});
+     lines.push_back(
+-- 
+2.43.0
+

@@ -1,0 +1,14 @@
+ChampSim upstream repository:
+https://github.com/CMU-SAFARI/ChampSim.git
+
+Upstream base commit:
+6513c5c45212ca677a9f046a51f278a70b0360f0
+
+Characterization branch commit:
+656407b
+
+Statistics branch commit:
+122c656
+
+vcpkg submodule:
+1de2026f28ead93ff1773e6e680387643e914ea1

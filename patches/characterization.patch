@@ -1,0 +1,104 @@
+From 656407b860a01fd45949dd0a6b770580a585ad27 Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Thu, 1 Oct 2026 10:43:12 +0700
+Subject: [PATCH] Add bounded L2 demand access characterization logging
+
+---
+ src/cache.cc | 74 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
+
+diff --git a/src/cache.cc b/src/cache.cc
+index 976d0c4..3b28b68 100644
+--- a/src/cache.cc
++++ b/src/cache.cc
+@@ -19,6 +19,8 @@
+ #include <algorithm>
+ #include <cassert>
+ #include <cmath>
++#include <cstdlib>
++#include <fstream>
+ #include <iomanip>
+ #include <numeric>
+ #include <fmt/core.h>
+@@ -270,6 +272,78 @@ bool CACHE::try_hit(const tag_lookup_type& handle_pkt)
+   const auto hit = (way != set_end);
+   const auto useful_prefetch = (hit && way->prefetch && !handle_pkt.prefetch_from_this);
+ 
++  // Project 3 characterization instrumentation.
++  //
++  // When CHAMPSIM_L2_DUMP is set, record a bounded sample of L2 demand-data
++  // LOAD accesses during the measured region of interest only.
++  //
++  // Example:
++  //   CHAMPSIM_L2_DUMP=/tmp/l2.csv
++  //   CHAMPSIM_L2_DUMP_LIMIT=1000000
++  //
++  // The project configuration uses 64-byte cache lines and 4 KiB pages.
++  static bool l2_dump_initialized = false;
++  static std::ofstream l2_dump_stream{};
++  static uint64_t l2_dump_limit = 0;
++  static uint64_t l2_dump_count = 0;
++
++  if (!l2_dump_initialized) {
++    l2_dump_initialized = true;
++
++    const char* dump_path = std::getenv("CHAMPSIM_L2_DUMP");
++
++    if (dump_path != nullptr && dump_path[0] != '\0') {
++      l2_dump_stream.open(dump_path, std::ios::out | std::ios::trunc);
++
++      const char* limit_env = std::getenv("CHAMPSIM_L2_DUMP_LIMIT");
++      l2_dump_limit =
++          (limit_env != nullptr && limit_env[0] != '\0')
++              ? std::strtoull(limit_env, nullptr, 10)
++              : 1000000ULL;
++
++      if (l2_dump_stream.is_open()) {
++        l2_dump_stream
++            << "seq,ip,address,line_addr,page,line_offset,hit,instr_id,cycle\n";
++      }
++    }
++  }
++
++  const bool is_l2_data_load =
++      (NAME.find("L2C") != std::string::npos) &&
++      !warmup &&
++      !handle_pkt.is_instr &&
++      handle_pkt.type == access_type::LOAD;
++
++  if (l2_dump_stream.is_open() &&
++      is_l2_data_load &&
++      l2_dump_count < l2_dump_limit) {
++
++    constexpr uint64_t block_bytes = 64;
++    constexpr uint64_t page_bytes = 4096;
++
++    const auto addr = handle_pkt.address.to<uint64_t>();
++    const auto ip = handle_pkt.ip.to<uint64_t>();
++
++    const auto line_addr = addr / block_bytes;
++    const auto page = addr / page_bytes;
++    const auto line_offset = (addr % page_bytes) / block_bytes;
++    const auto cycle =
++        current_time.time_since_epoch() / clock_period;
++
++    l2_dump_stream
++        << l2_dump_count << ','
++        << "0x" << std::hex << ip << ','
++        << "0x" << addr << std::dec << ','
++        << line_addr << ','
++        << page << ','
++        << line_offset << ','
++        << (hit ? 1 : 0) << ','
++        << handle_pkt.instr_id << ','
++        << cycle << '\n';
++
++    ++l2_dump_count;
++  }
++
+   if constexpr (champsim::debug_print) {
+     fmt::print("[{}] {} instr_id: {} address: {} v_address: {} data: {} set: {} way: {} ({}) type: {} cycle: {}\n", NAME, __func__, handle_pkt.instr_id,
+                handle_pkt.address, handle_pkt.v_address, handle_pkt.data, get_set_index(handle_pkt.address), std::distance(set_begin, way),
+-- 
+2.43.0
+

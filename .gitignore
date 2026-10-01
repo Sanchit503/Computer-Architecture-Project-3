@@ -1,0 +1,16 @@
+# Nested ChampSim repository
+ChampSim/
+
+# Large trace files
+traces/
+
+# Generated simulation output
+results/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor/temp files
+*~
+*.swp
