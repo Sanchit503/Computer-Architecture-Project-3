@@ -101,11 +101,23 @@ def parse_file(path):
     pf_filled = int(l2["prefetch filled"])
     pf_useful = int(l2["useful prefetch"])
     pf_useless = int(l2["useless prefetch"])
+    pf_late = int(l2.get("late prefetch", 0))
 
     pf_accuracy = safe_div(
         pf_useful,
         pf_filled
     )
+
+    pf_lateness = safe_div(
+        pf_late,
+        pf_useful
+    )
+
+    if pf_late > pf_useful:
+        raise RuntimeError(
+            f"{path}: late prefetches exceed useful prefetches "
+            f"({pf_late} > {pf_useful})"
+        )
 
     pf_fill_rate = safe_div(
         pf_filled,
@@ -194,8 +206,10 @@ def parse_file(path):
         "pf_filled": pf_filled,
         "pf_useful": pf_useful,
         "pf_useless": pf_useless,
+        "pf_late": pf_late,
 
         "pf_accuracy": pf_accuracy,
+        "pf_lateness": pf_lateness,
         "pf_fill_rate": pf_fill_rate,
         "pf_unclassified_at_end":
             pf_unclassified_at_end,
@@ -277,6 +291,7 @@ def print_summary(r):
     print(f"Filled                   : {r['pf_filled']}")
     print(f"Useful                   : {r['pf_useful']}")
     print(f"Useless                  : {r['pf_useless']}")
+    print(f"Late                     : {r['pf_late']}")
 
     if r["pf_filled"]:
         print(
@@ -285,6 +300,14 @@ def print_summary(r):
         )
     else:
         print("Accuracy useful/filled   : N/A")
+
+    if r["pf_useful"]:
+        print(
+            f"Lateness late/useful     : "
+            f"{100*r['pf_lateness']:.2f}%"
+        )
+    else:
+        print("Lateness late/useful     : N/A")
 
     print(
         f"Filled but not classified: "
