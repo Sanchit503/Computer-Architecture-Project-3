@@ -1,0 +1,15 @@
+ligra/ligra_BFSCC.com-lj.ungraph.gcc_6.3.0_O3.drop_15500M.length_250M.champsimtrace.xz
+ligra/ligra_BFSCC.com-lj.ungraph.gcc_6.3.0_O3.drop_17000M.length_250M.champsimtrace.xz
+ligra/ligra_PageRankDelta.com-lj.ungraph.gcc_6.3.0_O3.drop_17000M.length_250M.champsimtrace.xz
+ligra/ligra_PageRankDelta.com-lj.ungraph.gcc_6.3.0_O3.drop_24000M.length_250M.champsimtrace.xz
+ligra/ligra_PageRankDelta.com-lj.ungraph.gcc_6.3.0_O3.drop_6000M.length_250M.champsimtrace.xz
+ligra/ligra_Triangle.com-lj.ungraph.gcc_6.3.0_O3.drop_25000M.length_250M.champsimtrace.xz
+llama2/llama2.c-stories110M.1.champsimtrace.gz
+llama2/llama2.c-stories110M.2.champsimtrace.gz
+llama2/llama2.c-stories110M.3.champsimtrace.gz
+llama2/llama2.c-stories15M.1.champsimtrace.gz
+llama2/llama2.c-stories15M.2.champsimtrace.gz
+llama2/llama2.c-stories15M.3.champsimtrace.gz
+llama2/llama2.c-stories42M.1.champsimtrace.gz
+llama2/llama2.c-stories42M.2.champsimtrace.gz
+llama2/llama2.c-stories42M.3.champsimtrace.gz
