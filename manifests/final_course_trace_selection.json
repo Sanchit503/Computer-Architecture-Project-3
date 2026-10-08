@@ -1,0 +1,39 @@
+{
+  "selection_rule": "Preselected representative trace for each required Graph/AI workload, accepted only when the official no-prefetch LLC LOAD MPKI is at least 1.",
+  "warmup_instructions": 50000000,
+  "simulation_instructions": 100000000,
+  "traces": [
+    {
+      "workload": "bfscc",
+      "trace": "traces/course_candidates/ligra/ligra_BFSCC.com-lj.ungraph.gcc_6.3.0_O3.drop_15500M.length_250M.champsimtrace.xz",
+      "sha256": "3585b6c1a3f9d934f06c1e15199a58af6808e290408dc618de19b9dd34302a98",
+      "baseline": "results/official/course/bfscc/nopref",
+      "llc_load_mpki": 6.90535,
+      "llc_demand_mpki": 23.51222
+    },
+    {
+      "workload": "pagerankdelta",
+      "trace": "traces/course_candidates/ligra/ligra_PageRankDelta.com-lj.ungraph.gcc_6.3.0_O3.drop_6000M.length_250M.champsimtrace.xz",
+      "sha256": "758c400326fda485950f31d26f074a3d60c4c6d2c5a7b3d8841f2f866db87aa4",
+      "baseline": "results/official/course/pagerankdelta/nopref",
+      "llc_load_mpki": 2.98283,
+      "llc_demand_mpki": 5.95404
+    },
+    {
+      "workload": "triangle",
+      "trace": "traces/course_candidates/ligra/ligra_Triangle.com-lj.ungraph.gcc_6.3.0_O3.drop_25000M.length_250M.champsimtrace.xz",
+      "sha256": "1b4189326ea620b16385c77babe186e10f6d2faa6737eaeb49de417bfbb883f6",
+      "baseline": "results/official/course/triangle/nopref",
+      "llc_load_mpki": 12.147709757045805,
+      "llc_demand_mpki": 12.147709757045805
+    },
+    {
+      "workload": "llama2",
+      "trace": "traces/course_candidates/llama2/llama2.c-stories15M.1.champsimtrace.gz",
+      "sha256": "9fe22dca8a3cb1478de4e57d597d521551490cbf4972f2bdfd99d178ac739997",
+      "baseline": "results/official/course/llama2/nopref",
+      "llc_load_mpki": 33.94067,
+      "llc_demand_mpki": 34.0384
+    }
+  ]
+}
