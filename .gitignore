@@ -14,3 +14,9 @@ __pycache__/
 # Editor/temp files
 *~
 *.swp
+
+# Local experiment backups
+/backups/
+
+# Windows download metadata
+*:Zone.Identifier

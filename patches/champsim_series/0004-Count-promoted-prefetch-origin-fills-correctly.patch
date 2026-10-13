@@ -1,0 +1,55 @@
+From 667475ef1397817e2257edcf69f9ce778850d0aa Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Sun, 4 Oct 2026 14:06:54 +0700
+Subject: [PATCH 4/4] Count promoted prefetch-origin fills correctly
+
+---
+ inc/cache.h  | 1 +
+ src/cache.cc | 8 ++++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/inc/cache.h b/inc/cache.h
+index b143dc6..bbdcd8a 100644
+--- a/inc/cache.h
++++ b/inc/cache.h
+@@ -106,6 +106,7 @@ public:
+ 
+     access_type type;
+     bool prefetch_from_this;
++    bool miss_originated_as_prefetch = false;
+     bool is_instr = false;
+ 
+     uint8_t asid[2] = {std::numeric_limits<uint8_t>::max(), std::numeric_limits<uint8_t>::max()};
+diff --git a/src/cache.cc b/src/cache.cc
+index 96f0d2c..c951850 100644
+--- a/src/cache.cc
++++ b/src/cache.cc
+@@ -103,7 +103,8 @@ CACHE::tag_lookup_type::tag_lookup_type(const request_type& req, bool local_pref
+ 
+ CACHE::mshr_type::mshr_type(const tag_lookup_type& req, champsim::chrono::clock::time_point _time_enqueued)
+     : address(req.address), v_address(req.v_address), ip(req.ip), instr_id(req.instr_id), cpu(req.cpu), type(req.type),
+-      prefetch_from_this(req.prefetch_from_this), is_instr(req.is_instr), time_enqueued(_time_enqueued), instr_depend_on_me(req.instr_depend_on_me),
++      prefetch_from_this(req.prefetch_from_this), miss_originated_as_prefetch(req.prefetch_from_this), is_instr(req.is_instr),
++      time_enqueued(_time_enqueued), instr_depend_on_me(req.instr_depend_on_me),
+       to_return(req.to_return)
+ {
+ }
+@@ -120,6 +121,9 @@ CACHE::mshr_type CACHE::mshr_type::merge(mshr_type predecessor, mshr_type succes
+ 
+   mshr_type retval{(successor.type == access_type::PREFETCH) ? predecessor : successor};
+ 
++  // Statistics-only provenance: remember what originally opened this MSHR.
++  retval.miss_originated_as_prefetch = predecessor.miss_originated_as_prefetch;
++
+   // set the time enqueued to the predecessor unless its a demand into prefetch, in which case we use the successor
+   retval.time_enqueued =
+       ((successor.type != access_type::PREFETCH && predecessor.type == access_type::PREFETCH)) ? successor.time_enqueued : predecessor.time_enqueued;
+@@ -232,7 +236,7 @@ bool CACHE::handle_fill(const mshr_type& fill_mshr)
+       ++sim_stats.pf_useless;
+     }
+ 
+-    if (fill_mshr.type == access_type::PREFETCH) {
++    if (fill_mshr.miss_originated_as_prefetch) {
+       ++sim_stats.pf_fill;
+     }
+   }

@@ -1,0 +1,84 @@
+From 0f11d68c07d70994c12976c8487f061fe2a2b50f Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Sun, 4 Oct 2026 09:29:22 +0700
+Subject: [PATCH 2/4] Add late prefetch measurement
+
+---
+ inc/cache_stats.h    | 1 +
+ src/cache.cc         | 2 ++
+ src/cache_stats.cc   | 1 +
+ src/json_printer.cc  | 1 +
+ src/plain_printer.cc | 4 ++--
+ 5 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/inc/cache_stats.h b/inc/cache_stats.h
+index 6505202..09e24a7 100644
+--- a/inc/cache_stats.h
++++ b/inc/cache_stats.h
+@@ -17,6 +17,7 @@ struct cache_stats {
+   uint64_t pf_useful = 0;
+   uint64_t pf_useless = 0;
+   uint64_t pf_fill = 0;
++  uint64_t pf_late = 0;
+ 
+   champsim::stats::event_counter<std::pair<access_type, std::remove_cv_t<decltype(NUM_CPUS)>>> hits = {};
+   champsim::stats::event_counter<std::pair<access_type, std::remove_cv_t<decltype(NUM_CPUS)>>> misses = {};
+diff --git a/src/cache.cc b/src/cache.cc
+index 976d0c4..7d079ca 100644
+--- a/src/cache.cc
++++ b/src/cache.cc
+@@ -355,6 +355,7 @@ bool CACHE::handle_miss(const tag_lookup_type& handle_pkt)
+       // Mark the prefetch as useful
+       if (mshr_entry->prefetch_from_this) {
+         ++sim_stats.pf_useful;
++        ++sim_stats.pf_late;
+       }
+     }
+ 
+@@ -892,6 +893,7 @@ void CACHE::end_phase(unsigned finished_cpu)
+   roi_stats.pf_useful = sim_stats.pf_useful;
+   roi_stats.pf_useless = sim_stats.pf_useless;
+   roi_stats.pf_fill = sim_stats.pf_fill;
++  roi_stats.pf_late = sim_stats.pf_late;
+ 
+   for (auto* ul : upper_levels) {
+     ul->roi_stats.RQ_ACCESS = ul->sim_stats.RQ_ACCESS;
+diff --git a/src/cache_stats.cc b/src/cache_stats.cc
+index 0c47493..b907091 100644
+--- a/src/cache_stats.cc
++++ b/src/cache_stats.cc
+@@ -8,6 +8,7 @@ cache_stats operator-(cache_stats lhs, cache_stats rhs)
+   result.pf_useful = lhs.pf_useful - rhs.pf_useful;
+   result.pf_useless = lhs.pf_useless - rhs.pf_useless;
+   result.pf_fill = lhs.pf_fill - rhs.pf_fill;
++  result.pf_late = lhs.pf_late - rhs.pf_late;
+ 
+   result.hits = lhs.hits - rhs.hits;
+   result.misses = lhs.misses - rhs.misses;
+diff --git a/src/json_printer.cc b/src/json_printer.cc
+index d15b30d..c983b50 100644
+--- a/src/json_printer.cc
++++ b/src/json_printer.cc
+@@ -52,6 +52,7 @@ void to_json(nlohmann::json& j, const CACHE::stats_type& stats)
+   statsmap.emplace("useful prefetch", stats.pf_useful);
+   statsmap.emplace("useless prefetch", stats.pf_useless);
+   statsmap.emplace("prefetch filled", stats.pf_fill);
++  statsmap.emplace("late prefetch", stats.pf_late);
+ 
+   uint64_t total_downstream_demands = stats.mshr_return.total();
+   for (std::size_t cpu = 0; cpu < NUM_CPUS; ++cpu)
+diff --git a/src/plain_printer.cc b/src/plain_printer.cc
+index bc31de7..07da458 100644
+--- a/src/plain_printer.cc
++++ b/src/plain_printer.cc
+@@ -116,8 +116,8 @@ std::vector<std::string> champsim::plain_printer::format(CACHE::stats_type stats
+                       stats.mshr_merge.value_or(std::pair{type, cpu}, mshr_merge_value_type{})));
+     }
+ 
+-    lines.push_back(fmt::format("cpu{}->{} PREFETCH REQUESTED: {:10} ISSUED: {:10} USEFUL: {:10} USELESS: {:10} FILLED: {:10}", cpu, stats.name,
+-                                stats.pf_requested, stats.pf_issued, stats.pf_useful, stats.pf_useless, stats.pf_fill));
++    lines.push_back(fmt::format("cpu{}->{} PREFETCH REQUESTED: {:10} ISSUED: {:10} USEFUL: {:10} USELESS: {:10} FILLED: {:10} LATE: {:10}", cpu, stats.name,
++                                stats.pf_requested, stats.pf_issued, stats.pf_useful, stats.pf_useless, stats.pf_fill, stats.pf_late));
+ 
+     uint64_t total_downstream_demands = total_mshr_return - stats.mshr_return.value_or(std::pair{access_type::PREFETCH, cpu}, mshr_return_value_type{});
+     lines.push_back(

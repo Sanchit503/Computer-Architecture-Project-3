@@ -1,0 +1,40 @@
+diff --git a/prefetcher/spp_dev/spp_dev.cc b/prefetcher/spp_dev/spp_dev.cc
+index 29f824e..1e5bed9 100644
+--- a/prefetcher/spp_dev/spp_dev.cc
++++ b/prefetcher/spp_dev/spp_dev.cc
+@@ -352,6 +352,16 @@ void spp_dev::PATTERN_TABLE::read_pattern(uint32_t curr_sig, std::vector<typenam
+                                           uint32_t& lookahead_way, uint32_t& lookahead_conf, uint32_t& pf_q_tail, uint32_t& depth)
+ {
+   // Update (sig, delta) correlation
++  const auto queue_capacity =
++      confidence_q.size() < delta_q.size()
++          ? confidence_q.size() : delta_q.size();
++
++  if (pf_q_tail >= queue_capacity) {
++    lookahead_way = PT_WAY;
++    lookahead_conf = 0;
++    return;
++  }
++
+   uint32_t set = get_hash(curr_sig) % PT_SET, local_conf = 0, pf_conf = 0, max_conf = 0;
+ 
+   if (c_sig[set]) {
+@@ -359,7 +369,7 @@ void spp_dev::PATTERN_TABLE::read_pattern(uint32_t curr_sig, std::vector<typenam
+       local_conf = (100 * c_delta[set][way]) / c_sig[set];
+       pf_conf = depth ? (_parent->GHR.global_accuracy * c_delta[set][way] / c_sig[set] * lookahead_conf / 100) : local_conf;
+ 
+-      if (pf_conf >= PF_THRESHOLD) {
++      if (pf_conf >= PF_THRESHOLD && pf_q_tail < queue_capacity) {
+         confidence_q[pf_q_tail] = pf_conf;
+         delta_q[pf_q_tail] = delta[set][way];
+ 
+@@ -383,7 +393,8 @@ void spp_dev::PATTERN_TABLE::read_pattern(uint32_t curr_sig, std::vector<typenam
+         }
+       }
+     }
+-    pf_q_tail++;
++    if (pf_q_tail < queue_capacity)
++      pf_q_tail++;
+ 
+     lookahead_conf = max_conf;
+     if (lookahead_conf >= PF_THRESHOLD)
